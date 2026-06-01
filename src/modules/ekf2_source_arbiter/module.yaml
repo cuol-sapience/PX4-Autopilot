@@ -2,6 +2,14 @@ module_name: ekf2_source_arbiter
 parameters:
   - group: EKF2 Source Arbiter
     definitions:
+      ESA_EN:
+          description:
+              short: EKF2 source arbiter enable
+              long: |
+                  EKF2 source arbiter enable
+          type: boolean
+          default: 1
+
       ESA_RATE:
         description:
           short: Arbiter update rate

@@ -373,6 +373,11 @@ else
 		ekf2 start &
 	fi
 
+	if param compare -s ESA_EN 1
+	then
+		ekf2_source_arbiter start &
+	fi
+
 	if param compare -s LPE_EN 1
 	then
 		local_position_estimator start
