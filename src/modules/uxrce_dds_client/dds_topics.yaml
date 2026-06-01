@@ -89,6 +89,10 @@ publications:
     type: px4_msgs::msg::VehicleStatus
     rate_limit: 5.
 
+  - topic: /fmu/out/vehicle_magnetometer
+    type: px4_msgs::msg::VehicleMagnetometer
+    rate_limit: 50.
+
   - topic: /fmu/out/airspeed_validated
     type: px4_msgs::msg::AirspeedValidated
     rate_limit: 50.
