@@ -1,0 +1,8 @@
+menuconfig MODULES_EKF2_SOURCE_ARBITER
+	depends on MODULES_EKF2
+	depends on EKF2_EXTERNAL_VISION
+	depends on EKF2_GNSS
+	bool "ekf2_source_arbiter"
+	default n
+	--help--
+		Enable support for ekf2 source arbiter

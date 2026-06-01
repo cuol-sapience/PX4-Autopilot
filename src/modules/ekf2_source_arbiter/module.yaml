@@ -1,0 +1,127 @@
+module_name: ekf2_source_arbiter
+parameters:
+  - group: EKF2 Source Arbiter
+    definitions:
+      ESA_RATE:
+        description:
+          short: Arbiter update rate
+          long: |
+            How often to run the arbiter state machine.
+            This value should be at least twice the vehicle visual odometry publishing rate.
+        type: float
+        unit: Hz
+        min: 1.0
+        max: 50.0
+        decimal: 1
+        increment: 1.0
+        default: 10.0
+
+      ESA_EV_BITS:
+        description:
+          short: Arbiter managed bits for EKF2_EV_CTRL
+          long: |
+            Bitmask selecting which EKF2_EV_CTRL bits the arbiter enables
+            when SLAM is the active source and clears in GPS_FALLBACK.
+        type: int32
+        default: 3
+        min: 0
+        max: 15
+        bitmask:
+          0: Horizontal position
+          1: Vertical position
+          2: 3D velocity
+          3: Yaw
+
+      ESA_GPS_BITS:
+        description:
+          short: Arbiter managed bits for EKF2_GPS_CTRL
+          long: |
+            Bitmask selecting which EKF2_GPS_CTRL bits the arbiter enables
+            during GPS fallback and blend states and suppresses in SLAM_ONLY.
+        type: int32
+        default: 7
+        min: 0
+        max: 15
+        bitmask:
+          0: Longitude / latitude
+          1: Altitude
+          2: 3D velocity
+          3: Dual-antenna heading
+
+      ESA_EV_STALE_T:
+        description:
+          short: Maximum EV age before considered stale
+          long: |
+            Maximum lapsed time since the last vehicle_visual_odometry message
+            after which EV should be considered stale.
+        type: float
+        unit: s
+        min: 0.1
+        max: 2.0
+        decimal: 2
+        increment: 0.05
+        default: 0.5
+
+
+      ESA_EV_TOUT:
+        description:
+          short: Maximum EV fusion timeout before blending GPS in
+          long: |
+            Maximum lapsed time from last fused EV measurement before
+            entering BLEND_TO_GPS state.
+        type: float
+        unit: s
+        min: 0.1
+        max: 10.0
+        decimal: 1
+        increment: 0.1
+        default: 0.5
+
+      ESA_BLEND_T:
+        description:
+          short: Blend window duration
+          long: |
+            Determines the duration to keep both EV and GPS sources enabled when transitioning
+            to a single source in either direction.
+
+            During this window EKF2 fuses both and naturally shifts
+            weight toward the source with lower innovations. Longer values give
+            a smoother handover at the cost of running two position sources
+            concurrently.
+        type: float
+        unit: s
+        min: 0.2
+        max: 10.0
+        decimal: 1
+        increment: 0.1
+        default: 1.0
+
+      ESA_GPS_RECOV_T:
+        description:
+          short: SLAM recovery hold-off before blending back from GPS
+          long: |
+            Minimum lapsed time to wait after first EV fuse before blending EV back in when in a GPS_FALLBACK state.
+        type: float
+        unit: s
+        min: 0.5
+        max: 60.0
+        decimal: 1
+        increment: 0.5
+        default: 2.0
+
+      ESA_EV_NOISE_MAX:
+        description:
+          short: EV position noise ceiling for blend transitions
+          long: |
+            EKF2_EVP_NOISE is ramped from its current value up to this ceiling
+            during BLEND_TO_GPS so EKF2 smoothly shifts position weight to GPS
+            before the EV source is disabled. The ramp runs in reverse during
+            BLEND_TO_SLAM. Must be large enough that EKF2 treats SLAM as
+            negligible relative to GPS at the end of the blend window.
+        type: float
+        unit: m
+        min: 5.0
+        max: 500.0
+        decimal: 1
+        increment: 5.0
+        default: 50.0
