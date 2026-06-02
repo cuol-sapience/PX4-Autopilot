@@ -137,6 +137,7 @@ private:
   orb_advert_t _mavlink_log_pub{nullptr};
 
   State _state{State::IDLE};
+  State _external_commanded_state{State::IDLE};
 
   // Timer tracking continuous EV failure in EV_ONLY (0 = not started).
   hrt_abstime _ev_lost_since{0};

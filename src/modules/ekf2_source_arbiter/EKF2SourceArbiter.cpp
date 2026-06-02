@@ -217,6 +217,12 @@ void EKF2SourceArbiter::applyNoiseRamp(hrt_abstime now, hrt_abstime blend_t) {
 // by the companion computer using VEHICLE_CMD_EKF2_ARBITER_SET
 // (command 43001 with param1 >= 1) before the module controls EKF2 params.
 // The same command with param==0 returns the module to an IDLE state.
+//
+// param2 0.0f - no action
+// param2 1.0f - force to GPS now
+// param2 2.0f - force to EV now
+// param2 does not prevent FC from switching sources as usual
+//
 // Commands are ack'd via vehicle_command_ack.
 void EKF2SourceArbiter::handleVehicleCommands() {
   vehicle_command_s cmd{};
@@ -232,10 +238,20 @@ void EKF2SourceArbiter::handleVehicleCommands() {
         _ev_lost_since = 0;
         mavlink_log_info(&_mavlink_log_pub, "[arbiter] enabled by companion");
       }
-
+      // Allow external computer to trigger a state change
+      if (_state != State::IDLE && PX4_ISFINITE(cmd.param2)) {
+        if (cmd.param2 >= 1.5f) {// force to EV
+          _external_commanded_state = State::BLEND_TO_EV;
+	  mavlink_log_info(&_mavlink_log_pub, "[arbiter] ack'd EV switch request");
+        } else if (cmd.param2 >= 0.5f) {
+          _external_commanded_state = State::BLEND_TO_GPS;
+	  mavlink_log_info(&_mavlink_log_pub, "[arbiter] ack'd GPS switch request");
+        }
+      }
     } else {
       if (_state != State::IDLE) {
         _state = State::IDLE;
+	_external_commanded_state = State::IDLE;
         mavlink_log_info(&_mavlink_log_pub, "[arbiter] disabled by companion");
       }
     }
@@ -366,6 +382,20 @@ void EKF2SourceArbiter::Run() {
 
     switch (_state) {
     case State::EV_ONLY:
+      // check if we have been instructed by ext. computer to switch to GPS
+      if (_external_commanded_state == State::BLEND_TO_GPS) {
+	    // If we have a noise param set, fetch it
+        if (_hdl_evp_noise != PARAM_INVALID) {
+          param_get(_hdl_evp_noise, &_evp_noise_baseline);
+        }
+
+        // Start blend to GPS fallback
+        _state = State::BLEND_TO_GPS;
+        _blend_start = now;
+	_external_commanded_state = State::IDLE;
+	break;
+      }
+
       // if we are currently fusing, mark this instant as when we lost EV.
       if (ev_fusing) {
         _ev_lost_since = 0;
@@ -391,6 +421,15 @@ void EKF2SourceArbiter::Run() {
       break;
 
     case State::GPS_FALLBACK:
+      // check if we have been instructed by ext. computer to switch to EV
+      if (_external_commanded_state == State::BLEND_TO_EV) {
+          _ev_good_since = now;
+	  _state       = State::BLEND_TO_EV;
+          _blend_start = now;
+	  _external_commanded_state = State::IDLE;
+	  break;
+      }
+
       if (ev_alive) {
         if (_ev_good_since == 0) {
           _ev_good_since = now;
