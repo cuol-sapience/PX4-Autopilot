@@ -81,6 +81,9 @@ int EKF2SourceArbiter::task_spawn(int argc, char *argv[]) {
     _object.store(instance);
     _task_id = task_id_is_work_queue;
 
+    // Kick off the work item; Run() reschedules to ASA_RATE on its first tick.
+    instance->ScheduleOnInterval(SCHEDULE_INTERVAL_US);
+
     return PX4_OK;
 
   } else {
