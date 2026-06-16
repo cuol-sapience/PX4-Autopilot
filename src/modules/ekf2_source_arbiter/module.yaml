@@ -31,7 +31,7 @@ parameters:
             Bitmask selecting which EKF2_EV_CTRL bits the arbiter enables
             when SLAM is the active source and clears in GPS_FALLBACK.
         type: int32
-        default: 3
+        default: 11
         min: 0
         max: 15
         bitmask:
